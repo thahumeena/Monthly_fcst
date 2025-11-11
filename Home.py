@@ -3,7 +3,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# Assuming 'config.py' with 'app_setup' exists or commenting it out if not
+# --- Setup is commented out as it relies on external file ---
 # from config import app_setup
 # app_setup("Forecasters' Tools")
 
@@ -18,11 +18,11 @@ try:
     )
     _page_config_ok = True
 except Exception as e:
-    _page_config_error = str(e)
+    _page_error = str(e)
     _page_config_ok = False
 
 # ---------------------------
-# 1. HIDE STREAMLIT UI (Toolbar, Menu, Footer)
+# 1. HIDE STREAMLIT UI (Toolbar, Menu, Footer) + Custom CSS
 # ---------------------------
 hide_streamlit_style = """
     <style>
@@ -46,8 +46,8 @@ hide_streamlit_style = """
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         width: 100%;
-        max-width: 400px;
-        background-color: white; /* Ensures it stands out against the page background */
+        max-width: 300px; /* NARROWER WIDTH FOR INPUTS */
+        background-color: white; 
     }
     .login-box label {
         font-weight: bold;
@@ -135,11 +135,12 @@ if not _page_config_ok:
     st.warning(
         "⚠️ Page configuration failed. Check 'Manage app → Logs' for details."
     )
-    st.caption(f"Error detail: {_page_config_error}")
+    st.caption(f"Error detail: {_page_error}")
 
 # ---------------------------
 # 4. LOGIN SYSTEM
 # ---------------------------
+# Using hardcoded credentials as requested by user
 USER_CREDENTIALS = {"forecaster": "Maldives123"} 
 
 if "logged_in" not in st.session_state:
@@ -179,7 +180,6 @@ if not st.session_state.logged_in:
         with st.form("login_form"):
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
-            # Sign In button is now full width and blue
             submitted = st.form_submit_button("Sign In")
             
             if submitted:
@@ -204,4 +204,15 @@ with col_center:
     st.markdown("<h3 style='text-align: center; margin-top: 8px;'>Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
+    # Placeholder buttons (updated list)
+    st.button("Tide Chart")
+    st.button("Alert Graphic")
+    st.button("Forecast Graphic")
+    st.button("Weekend Forecast")
+    st.button("Satellite Image")
+    st.button("Forecast App (Testing)")
+    st.button("Weather News")
+    st.button("Cloud Sketch") # <-- NEW BUTTON ADDED HERE
+
+    st.markdown("---")
     st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
