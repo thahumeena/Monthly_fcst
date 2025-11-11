@@ -16,7 +16,6 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 from matplotlib import colorbar
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from io import BytesIO
-# import warnings # Removed unused import
 
 # Set up page config and custom CSS for the header
 st.set_page_config(
@@ -25,6 +24,7 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom CSS
 st.markdown(
     """
     <style>
@@ -58,8 +58,6 @@ st.markdown(
 st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
 st.title("🌧️ Rainfall Outlook Map")
 
-# --- START OF USER'S ORIGINAL MAP SCRIPT LOGIC ---
-
 # Load shapefile and clip extent
 shp = 'data/Atoll_boundary2016.shp'
 # Use st.cache_data to speed up file loading on reruns
@@ -76,7 +74,7 @@ def load_data(path):
 try:
     gdf, unique_atolls = load_data(shp)
 except Exception as e:
-    st.error(f"Error loading shapefile: {e}. Please ensure 'data/Atoll_boundary2016.shp' exists.")
+    st.error(f"Error loading shapefile: {e}. Please ensure 'data/Atoll_boundary2016.shp' exists in the 'data' folder.")
     st.stop()
 
 
@@ -142,7 +140,7 @@ norm = BoundaryNorm(bins, len(bins) - 1)
 tick_positions = bins[:-1] + (bins[1] - bins[0]) / 2
 tick_labels = ['< 33%', '33%-66%', '> 66%']
 
-# Plot the shapefile
+# Plot the shapefile - FIX APPLIED HERE
 for idx, row in gdf.iterrows():
     # Determine the outline color based on the category for visual distinction
     outline_color = 'black'
@@ -151,11 +149,11 @@ for idx, row in gdf.iterrows():
     elif selected_categories.get(row['Name']) == 'Below Normal':
         outline_color = '#DE2D26' # Dark Red
     
-    # Plot the atoll
-    row['geometry'].plot(
+    # Plot the atoll (FIX: Convert the single geometry object to a GeoSeries for plotting)
+    gpd.GeoSeries([row['geometry']]).plot( 
         ax=ax, 
         color=row['fill_color'], 
-        edgecolor=outline_color, # Use the determined outline color
+        edgecolor=outline_color, 
         linewidth=0.5
     )
 
@@ -205,5 +203,3 @@ st.download_button(
     file_name=f"{map_title.replace(' ', '_')}.png",
     mime="image/png"
 )
-
-# --- END OF USER'S ORIGINAL MAP SCRIPT LOGIC ---
