@@ -35,7 +35,7 @@ hide_streamlit_style = """
     .login-container {
         display: flex;
         justify-content: center;
-        margin-top: 10px; /* Adjusted margin */
+        margin-top: 10px; 
     }
     .login-box {
         padding: 30px;
@@ -146,15 +146,7 @@ if "logged_in" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-def do_login(username, password):
-    username = (username or "").strip()
-    if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
-        st.session_state.logged_in = True
-        st.session_state.username = username
-        st.rerun()
-    else:
-        st.error("Invalid username or password")
-
+# LOGIC FOR do_login IS REMOVED. THE LOGIC FOR do_logout REMAINS.
 def do_logout():
     st.session_state.logged_in = False
     st.session_state.username = ""
@@ -179,7 +171,19 @@ if not st.session_state.logged_in:
             submitted = st.form_submit_button("Sign In")
             
             if submitted:
-                do_login(username, password)
+                # ---------------------------------------------
+                # LOGIN LOGIC MOVED DIRECTLY INTO 'if submitted'
+                # ---------------------------------------------
+                username_clean = (username or "").strip()
+                
+                if username_clean in USER_CREDENTIALS and USER_CREDENTIALS[username_clean] == password:
+                    st.session_state.logged_in = True
+                    st.session_state.username = username_clean
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password")
+                # ---------------------------------------------
+
         
         st.markdown('</div>', unsafe_allow_html=True) # Close login-box
     st.markdown('</div>', unsafe_allow_html=True) # Close login-container
