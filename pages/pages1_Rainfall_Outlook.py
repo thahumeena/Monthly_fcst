@@ -1,16 +1,3 @@
-# Insert this at the very top of pages1_Rainfall_Outlook.py and pages2_Temperature_Outlook.py
-import streamlit as st
-
-# ---------------------------
-# LOGIN CHECK
-# ---------------------------
-if 'logged_in' not in st.session_state or not st.session_state.logged_in:
-    st.error("🔒 Access Denied. Please log in through the Home page.")
-    st.stop()
-
-# ... rest of the script starts here ...
-
-
 from config import app_setup
 app_setup("Forecasters' Tools")
 import geopandas as gpd
@@ -140,6 +127,7 @@ st.download_button(
     file_name='rainfall_outlook_map.png',
     mime='image/png'
 )
+
 
 
 
