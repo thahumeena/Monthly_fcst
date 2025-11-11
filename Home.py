@@ -1,10 +1,11 @@
 # Home.py
-# Note: Assuming 'config.py' with 'app_setup' exists or that line is commented/removed if not available
-# from config import app_setup
-# app_setup("Forecasters' Tools")
-import os
+
 import streamlit as st
 import streamlit.components.v1 as components
+
+# Assuming 'config.py' with 'app_setup' exists or commenting it out if not
+# from config import app_setup
+# app_setup("Forecasters' Tools")
 
 # ---------------------------
 # 0. PAGE CONFIG (safe wrapper)
@@ -33,68 +34,99 @@ hide_streamlit_style = """
     [data-testid="stDecoration"] {visibility: hidden !important;}
     [data-testid="stStatusWidget"] {visibility: hidden !important;}
     div[data-testid="stActionButton"] {visibility: hidden !important;}
+    
+    /* Center and style the login form container */
+    .login-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 50px;
+    }
+    .login-box {
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        background-color: white; /* Ensures it stands out against the page background */
+    }
+    .login-box label {
+        font-weight: bold;
+    }
+    /* Style for the Sign In button within the form */
+    .login-box .stButton button {
+        background-color: #1E90FF;
+        color: white;
+        width: 100%;
+        margin-top: 15px;
+        border: none;
+    }
+    .login-box .stButton button:hover {
+        background-color: #1a7ae2;
+        color: white;
+    }
+    
+    /* General styles from previous versions */
+    .main-header {
+        background-color: #1E90FF;
+        color: white;
+        padding: 10px 0;
+        text-align: center;
+        font-size: 28px;
+        font-weight: bold;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+    .logout-link {
+        position: absolute;
+        right: 20px;
+        top: 12px;
+        font-size: 14px;
+        color: white;
+        text-decoration: none;
+    }
+    .logout-link:hover { text-decoration: underline; }
+    .stApp > .main > div {
+        padding-top: 84px;
+    }
+    /* This generic button style is now only for the main page buttons, not login */
+    div.stButton {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 6px;
+    }
+    .stButton > button {
+        width: 250px;
+        height: 40px;
+        margin: 5px 0;
+        font-size: 16px;
+        border: 1px solid #1E90FF;
+        color: #1E90FF;
+        background-color: white;
+        border-radius: 6px;
+    }
+    .stButton > button:hover {
+        background-color: #1E90FF;
+        color: white;
+    }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ---------------------------
-# 2. HEADER + STYLE
+# 2. HEADER + STATIC COMPONENT
 # ---------------------------
 HEADER_HTML = """
-<style>
-.main-header {
-    background-color: #1E90FF;
-    color: white;
-    padding: 10px 0;
-    text-align: center;
-    font-size: 28px;
-    font-weight: bold;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-.logout-link {
-    position: absolute;
-    right: 20px;
-    top: 12px;
-    font-size: 14px;
-    color: white;
-    text-decoration: none;
-}
-.logout-link:hover { text-decoration: underline; }
-.stApp > .main > div {
-    padding-top: 84px;
-}
-div.stButton {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 6px;
-}
-.stButton > button {
-    width: 250px;
-    height: 40px;
-    margin: 5px 0;
-    font-size: 16px;
-    border: 1px solid #1E90FF;
-    color: #1E90FF;
-    background-color: white;
-    border-radius: 6px;
-}
-.stButton > button:hover {
-    background-color: #1E90FF;
-    color: white;
-}
-</style>
-
 <div class="main-header" id="mainHeader">
   Forecasters' Tools
   <span class="logout-link" id="logoutAnchor"></span>
 </div>
 """
 components.html(HEADER_HTML, height=10)
+
 
 # ---------------------------
 # 3. PAGE CONFIG ERROR HANDLER
@@ -108,7 +140,6 @@ if not _page_config_ok:
 # ---------------------------
 # 4. LOGIN SYSTEM
 # ---------------------------
-# HARDCODED CREDENTIALS - REMINDER: Move these to st.secrets for security!
 USER_CREDENTIALS = {"forecaster": "Maldives123"} 
 
 if "logged_in" not in st.session_state:
@@ -118,11 +149,9 @@ if "username" not in st.session_state:
 
 def do_login(username, password):
     username = (username or "").strip()
-    # Check against hardcoded credentials
     if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
         st.session_state.logged_in = True
         st.session_state.username = username
-        # FIX: Using st.rerun()
         st.rerun()
     else:
         st.error("Invalid username or password")
@@ -130,25 +159,35 @@ def do_login(username, password):
 def do_logout():
     st.session_state.logged_in = False
     st.session_state.username = ""
-    # FIX: Using st.rerun()
     st.rerun()
 
 # ---------------------------
-# 5. LOGIN PAGE
+# 5. LOGIN PAGE (ENHANCED UI)
 # ---------------------------
 if not st.session_state.logged_in:
+    # Title and subtitle
     st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center;'>🔒 Forecasters' Tools — Sign In</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; margin-top:-10px;'>Please sign in to access MMS tools.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; margin-top:-10px; color:#555;'>Please sign in to access MMS tools.</p>", unsafe_allow_html=True)
 
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Sign In")
-        if submitted:
-            do_login(username, password)
-
-    # REMOVED: st.info("Demo credentials — Username: `forecaster`  Password: `Maldives123`")
+    # Centering the login box
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
+        
+        # Streamlit Form
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            # Sign In button is now full width and blue
+            submitted = st.form_submit_button("Sign In")
+            
+            if submitted:
+                do_login(username, password)
+        
+        st.markdown('</div>', unsafe_allow_html=True) # Close login-box
+    st.markdown('</div>', unsafe_allow_html=True) # Close login-container
+    
     st.stop()
 
 # ---------------------------
