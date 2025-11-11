@@ -1,6 +1,7 @@
 # Home.py
-from config import app_setup
-app_setup("Forecasters' Tools")
+# Note: Assuming 'config.py' with 'app_setup' exists or that line is commented/removed if not available
+# from config import app_setup
+# app_setup("Forecasters' Tools")
 import os
 import streamlit as st
 import streamlit.components.v1 as components
@@ -119,14 +120,16 @@ def do_login(username, password):
     if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
         st.session_state.logged_in = True
         st.session_state.username = username
-        st.experimental_rerun()
+        # FIX: Replaced st.experimental_rerun() with st.rerun()
+        st.rerun()
     else:
         st.error("Invalid username or password")
 
 def do_logout():
     st.session_state.logged_in = False
     st.session_state.username = ""
-    st.experimental_rerun()
+    # FIX: Replaced st.experimental_rerun() with st.rerun()
+    st.rerun()
 
 # ---------------------------
 # 5. LOGIN PAGE
@@ -160,8 +163,8 @@ with col_center:
     st.markdown("<h3 style='text-align: center; margin-top: 8px;'>Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # The section with the seven st.button() calls has been removed.
-
     st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
 
-st.markdown("<br><center><a href='#' style='color:#1E90FF;' onclick='window.location.reload();'>🔓 Log Out</a></center>", unsafe_allow_html=True)
+# This inline JavaScript link is unnecessary if you use the Log Out button, 
+# but if you need a static link, it should ideally trigger a Python function.
+# st.markdown("<br><center><a href='#' style='color:#1E90FF;' onclick='window.location.reload();'>🔓 Log Out</a></center>", unsafe_allow_html=True)
