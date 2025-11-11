@@ -141,11 +141,6 @@ if not _page_config_ok:
 # HARDCODED CREDENTIALS
 USER_CREDENTIALS = {"forecaster": "Maldives123"} 
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
-
 # LOGIC FOR do_login IS REMOVED. THE LOGIC FOR do_logout REMAINS.
 def do_logout():
     st.session_state.logged_in = False
@@ -207,3 +202,4 @@ with col_center:
     st.markdown("---")
 
     st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
+
