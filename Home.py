@@ -3,10 +3,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# --- Setup (commented out as it relies on external file) ---
-# from config import app_setup
-# app_setup("Forecasters' Tools")
-
 # ---------------------------
 # 0. PAGE CONFIG (safe wrapper)
 # ---------------------------
@@ -46,7 +42,7 @@ hide_streamlit_style = """
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         width: 100%;
-        max-width: 200px; /* VERY SMALL WIDTH */
+        max-width: 200px; /* VERY SMALL LOGIN BOX */
         background-color: white; 
     }
     .login-box label {
@@ -188,7 +184,8 @@ if not st.session_state.logged_in:
         st.markdown('</div>', unsafe_allow_html=True) # Close login-box
     st.markdown('</div>', unsafe_allow_html=True) # Close login-container
     
-    st.stop() # Stops execution of the rest of the script if not logged in
+    # Crucially, stop here if not logged in. This prevents the sidebar from loading page links.
+    st.stop()
 
 # ---------------------------
 # 6. MAIN APP (After Login)
