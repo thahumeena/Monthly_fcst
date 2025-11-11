@@ -148,7 +148,7 @@ if not st.session_state.logged_in:
         if submitted:
             do_login(username, password)
 
-    st.info("Demo credentials — Username: `forecaster`  Password: `Maldives123`")
+    # REMOVED: st.info("Demo credentials — Username: `forecaster`  Password: `Maldives123`")
     st.stop()
 
 # ---------------------------
