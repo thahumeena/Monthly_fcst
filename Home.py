@@ -35,7 +35,7 @@ hide_streamlit_style = """
     .login-container {
         display: flex;
         justify-content: center;
-        margin-top: 50px;
+        margin-top: 150px; /* Increased margin to center the smaller login box vertically */
     }
     .login-box {
         padding: 30px;
@@ -159,14 +159,11 @@ def do_logout():
     st.rerun()
 
 # ---------------------------
-# 5. LOGIN PAGE (SECURED)
+# 5. LOGIN PAGE (SECURED AND SIMPLIFIED)
 # ---------------------------
 if not st.session_state.logged_in:
-    # Title and subtitle
-    st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center;'>🔒 Forecasters' Tools — Sign In</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; margin-top:-10px; color:#555;'>Please sign in to access MMS tools.</p>", unsafe_allow_html=True)
-
+    # Title and subtitle are removed for a cleaner, smaller login screen.
+    
     # Centering the small login box
     st.markdown('<div class="login-container">', unsafe_allow_html=True)
     with st.container():
