@@ -1,3 +1,5 @@
+# pages2_Temperature_Outlook.py
+
 import streamlit as st
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -7,40 +9,85 @@ from matplotlib import colorbar
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import io
 import warnings
+import numpy as np
+
+# --- AUTHENTICATION & CONFIG ---
+if not st.session_state.get('authenticated', False):
+    st.error("Please log in on the Home page to access this tool.")
+    st.stop()
+
+st.set_page_config(
+    page_title="Temperature Outlook",
+    page_icon="🌡️",
+    layout="wide"
+)
+
+st.markdown(
+    """
+    <style>
+    /* CUSTOM BLUE HEADER BAR */
+    .main-header {
+        background-color: #1E90FF;
+        color: white;
+        padding: 10px 0;
+        text-align: center;
+        font-size: 28px;
+        font-weight: bold;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    /* Push main content down to account for the fixed header */
+    .st-emotion-cache-1g8i5u7, .st-emotion-cache-6qob1r, .st-emotion-cache-1y4pm5r {
+        padding-top: 80px; 
+    }
+    .st-emotion-cache-1629p8f { /* Hide hamburger menu icon */
+        display: none !important;
+    }
+    </style>
+    """, 
+    unsafe_allow_html=True
+)
+st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
+st.title("🌡️ Temperature Outlook Map")
+# ------------------------------
 
 # --- Ignore harmless warnings ---
 warnings.filterwarnings("ignore", message="missing ScriptRunContext")
 warnings.filterwarnings("ignore", message="not compatible with tight_layout")
 
 # --- Load shapefile ---
-shp = data/Atoll_boundary2016.shp"
-gdf = gpd.read_file(shp).to_crs(epsg=4326)
-bbox = box(71, -1, 75, 7.5)
-gdf = gdf[gdf.intersects(bbox)]
+# FIX: Corrected shapefile path quotation
+shp = 'data/Atoll_boundary2016.shp'
+
+@st.cache_data
+def load_data(path):
+    gdf = gpd.read_file(path).to_crs(epsg=4326)
+    bbox = box(71, -1, 75, 7.5)
+    gdf = gdf[gdf.intersects(bbox)]
+    # Clean missing or invalid atoll names
+    gdf['Name'] = gdf['Name'].fillna("Unknown")
+    return gdf, sorted(gdf['Name'].unique().tolist())
+
+try:
+    gdf, unique_atolls = load_data(shp)
+except Exception as e:
+    st.error(f"Error loading shapefile: {e}. Ensure 'data/Atoll_boundary2016.shp' exists.")
+    st.stop()
+
 
 # --- Default probabilities ---
 default_probs = {
-    'Haa Alifu Atoll': 65,
-    'Haa Dhaalu Atoll': 70,
-    'Noonu Atoll': 68,
-    'Baa Atoll': 72,
-    'Lhaviyani Atoll': 65,
-    'Raa Atoll': 68,
-    'Shaviyani Atoll': 70,
-    'Kaafu Atoll': 75,
-    'Alifu Alifu Atoll': 65,
-    'Alifu Dhaalu Atoll': 70,
-    'Vaavu Atoll': 68,
-    'Meemu Atoll': 62,
-    "Male' City": 75,
-    'Faafu Atoll': 50,
-    'Dhaalu Atoll': 52,
-    'Thaa Atoll': 45,
-    'Laamu Atoll': 55,
-    'Gaafu Alifu Atoll': 64,
-    'Gaafu Dhaalu Atoll': 62,
-    'Gnaviyani Atoll': 65,
-    'Seenu Atoll': 75
+    'Haa Alifu Atoll': 65, 'Haa Dhaalu Atoll': 70, 'Noonu Atoll': 68,
+    'Baa Atoll': 72, 'Lhaviyani Atoll': 65, 'Raa Atoll': 68,
+    'Shaviyani Atoll': 70, 'Kaafu Atoll': 75, 'Alifu Alifu Atoll': 65,
+    'Alifu Dhaalu Atoll': 70, 'Vaavu Atoll': 68, 'Meemu Atoll': 62,
+    "Male' City": 75, 'Faafu Atoll': 50, 'Dhaalu Atoll': 52,
+    'Thaa Atoll': 45, 'Laamu Atoll': 55, 'Gaafu Alifu Atoll': 64, 
+    'Gaafu Dhaalu Atoll': 62, 'Gnaviyani Atoll': 65, 'Seenu Atoll': 75
 }
 
 # --- Colormaps for categories ---
@@ -60,16 +107,22 @@ custom_title = st.sidebar.text_input(
 # User inputs per atoll
 user_probs = {}
 user_categories = {}
-for atoll, default in default_probs.items():
-    st.sidebar.markdown(f"**{atoll}**")
-    user_probs[atoll] = st.sidebar.slider(f"{atoll} Probability", 0, 100, default, step=1)
-    user_categories[atoll] = st.sidebar.selectbox(
-        f"{atoll} Category",
-        ["Above Normal", "Normal", "Below Normal"],
-        index=1
-    )
 
-generate_map = st.sidebar.button("🗺️ Generate Map")
+# Using a form to group inputs
+with st.sidebar.form("atoll_temp_form"):
+    for atoll in unique_atolls:
+        default_val = default_probs.get(atoll, 50)
+        st.markdown(f"**{atoll}**")
+        user_probs[atoll] = st.slider(f"{atoll} Probability", 0, 100, default_val, step=1, key=f"{atoll}_prob")
+        user_categories[atoll] = st.selectbox(
+            f"{atoll} Category",
+            ["Above Normal", "Normal", "Below Normal"],
+            index=1,
+            key=f"{atoll}_cat"
+        )
+    
+    generate_map = st.form_submit_button("🗺️ Generate Map")
+
 
 if generate_map:
     gdf['prob'] = gdf['Name'].map(user_probs)
@@ -89,6 +142,7 @@ if generate_map:
         subset = gdf[gdf['category'] == cat]
         if not subset.empty:
             cmap = ListedColormap(cmap_list)
+            # This is the correct GeoDataFrame plotting method
             subset.plot(
                 column='prob', cmap=cmap, norm=norm,
                 edgecolor='black', linewidth=0.5, ax=ax
@@ -124,7 +178,7 @@ if generate_map:
     make_cb(ax, ListedColormap(category_colors["Normal"]), "Normal", spacing)
     make_cb(ax, ListedColormap(category_colors["Below Normal"]), "Below Normal", 0)
 
-    plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+    plt.tight_layout()
 
     # --- Display map ---
     st.pyplot(fig)
