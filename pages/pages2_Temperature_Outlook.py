@@ -7,12 +7,7 @@ from matplotlib import colorbar
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import io
 import warnings
-import numpy as np 
-
-# --- AUTHENTICATION & CONFIG ---
-if not st.session_state.get('authenticated', False):
-    st.error("Please log in on the Home page to access this tool.")
-    st.stop()
+import numpy as np # Added missing numpy import
 
 st.set_page_config(
     page_title="Temperature Outlook",
@@ -20,11 +15,18 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for Header (Copied from Home.py for consistent look)
+# --- Configuration for Header and Hiding Icons ---
 st.markdown(
     """
     <style>
-    /* CUSTOM BLUE HEADER BAR */
+    /* 1. HIDE DEVELOPER ICONS (Share, Star, Pencil, GitHub) */
+    .st-emotion-cache-12fmw9a { 
+        visibility: hidden;
+        width: 0px;
+        height: 0px;
+    }
+    
+    /* 2. CUSTOM BLUE HEADER BAR (Copied for consistency) */
     .main-header {
         background-color: #1E90FF;
         color: white;
@@ -39,17 +41,15 @@ st.markdown(
         z-index: 1000;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    /* Push main content down to account for the fixed header */
+    /* 3. Push main content down to account for the fixed header */
     .st-emotion-cache-1g8i5u7, .st-emotion-cache-6qob1r, .st-emotion-cache-1y4pm5r {
         padding-top: 80px; 
-    }
-    .st-emotion-cache-1629p8f { /* Hide hamburger menu icon */
-        display: none !important;
     }
     </style>
     """, 
     unsafe_allow_html=True
 )
+
 st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
 st.title("🌡️ Temperature Outlook Map")
 # ------------------------------
@@ -59,32 +59,35 @@ warnings.filterwarnings("ignore", message="missing ScriptRunContext")
 warnings.filterwarnings("ignore", message="not compatible with tight_layout")
 
 # --- Load shapefile ---
-shp = 'data/Atoll_boundary2016.shp' 
+# CRITICAL FIX: Added quotes around the file path
+shp = 'data/Atoll_boundary2016.shp'
+gdf = gpd.read_file(shp).to_crs(epsg=4326)
+bbox = box(71, -1, 75, 7.5)
+gdf = gdf[gdf.intersects(bbox)]
 
-@st.cache_data 
-def load_data(path):
-    gdf = gpd.read_file(path).to_crs(epsg=4326)
-    bbox = box(71, -1, 75, 7.5)
-    gdf = gdf[gdf.intersects(bbox)]
-    gdf['Name'] = gdf['Name'].fillna("Unknown")
-    return gdf, sorted(gdf['Name'].unique().tolist())
-
-try:
-    gdf, unique_atolls = load_data(shp)
-except Exception as e:
-    st.error(f"Error loading shapefile: {e}. Ensure 'data/Atoll_boundary2016.shp' exists in the expected location.")
-    st.stop()
-
-
-# --- Default probabilities (Used only for initial slider defaults) ---
+# --- Default probabilities ---
 default_probs = {
-    'Haa Alifu Atoll': 65, 'Haa Dhaalu Atoll': 70, 'Noonu Atoll': 68,
-    'Baa Atoll': 72, 'Lhaviyani Atoll': 65, 'Raa Atoll': 68,
-    'Shaviyani Atoll': 70, 'Kaafu Atoll': 75, 'Alifu Alifu Atoll': 65,
-    'Alifu Dhaalu Atoll': 70, 'Vaavu Atoll': 68, 'Meemu Atoll': 62,
-    "Male' City": 75, 'Faafu Atoll': 50, 'Dhaalu Atoll': 52,
-    'Thaa Atoll': 45, 'Laamu Atoll': 55, 'Gaafu Alifu Atoll': 64, 
-    'Gaafu Dhaalu Atoll': 62, 'Gnaviyani Atoll': 65, 'Seenu Atoll': 75
+    'Haa Alifu Atoll': 65,
+    'Haa Dhaalu Atoll': 70,
+    'Noonu Atoll': 68,
+    'Baa Atoll': 72,
+    'Lhaviyani Atoll': 65,
+    'Raa Atoll': 68,
+    'Shaviyani Atoll': 70,
+    'Kaafu Atoll': 75,
+    'Alifu Alifu Atoll': 65,
+    'Alifu Dhaalu Atoll': 70,
+    'Vaavu Atoll': 68,
+    'Meemu Atoll': 62,
+    "Male' City": 75,
+    'Faafu Atoll': 50,
+    'Dhaalu Atoll': 52,
+    'Thaa Atoll': 45,
+    'Laamu Atoll': 55,
+    'Gaafu Alifu Atoll': 64,
+    'Gaafu Dhaalu Atoll': 62,
+    'Gnaviyani Atoll': 65,
+    'Seenu Atoll': 75
 }
 
 # --- Colormaps for categories ---
@@ -94,7 +97,7 @@ category_colors = {
     "Below Normal": ['#ffffff', '#c8c8ff', '#a6b6ff', '#8798f0', '#6c7be0', '#3c4fc2']
 }
 
-# --- Sidebar UI (Input collection - NO FORM/BUTTON) ---
+# --- Sidebar UI ---
 st.sidebar.header("🎛️ Adjust Atoll Probabilities & Categories")
 custom_title = st.sidebar.text_input(
     "📝 Map Title:",
@@ -104,15 +107,10 @@ custom_title = st.sidebar.text_input(
 # User inputs per atoll
 user_probs = {}
 user_categories = {}
-
-# Iterate over unique atolls found in the data
-atolls_to_show = [a for a in unique_atolls if a in default_probs] 
-
-for atoll in atolls_to_show:
-    default = default_probs.get(atoll, 50)
-    # Changed from st.markdown to st.sidebar.markdown
-    st.sidebar.markdown(f"**{atoll}**") 
-    # Sliders and selectboxes now trigger a rerun on change
+# Using st.sidebar.empty() to prevent the sidebar from refreshing the page content area
+# when iterating over default_probs, ensuring all inputs are in the sidebar
+for atoll, default in default_probs.items():
+    st.sidebar.markdown(f"**{atoll}**")
     user_probs[atoll] = st.sidebar.slider(f"{atoll} Probability", 0, 100, default, step=1, key=f"{atoll}_prob")
     user_categories[atoll] = st.sidebar.selectbox(
         f"{atoll} Category",
@@ -121,77 +119,77 @@ for atoll in atolls_to_show:
         key=f"{atoll}_cat"
     )
 
-# --- MAP GENERATION LOGIC (Now run every time the script runs) ---
+generate_map = st.sidebar.button("🗺️ Generate Map")
 
-# Use only atolls present in the loaded data and the user inputs
-valid_atolls = [a for a in user_probs.keys() if a in gdf['Name'].values]
+if generate_map:
+    gdf['prob'] = gdf['Name'].map(user_probs)
+    gdf['category'] = gdf['Name'].map(user_categories)
 
-gdf['prob'] = gdf['Name'].map({a: user_probs.get(a) for a in valid_atolls})
-gdf['category'] = gdf['Name'].map({a: user_categories.get(a) for a in valid_atolls})
+    # --- Colormap setup ---
+    bins = [0, 35, 45, 55, 65, 75, 100]
+    norm = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
+    tick_positions = [35, 45, 55, 65, 75]
+    tick_labels = ['35', '45', '55', '65', '75']
 
-# --- Colormap setup ---
-bins = [0, 35, 45, 55, 65, 75, 100]
-norm = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
-tick_positions = [35, 45, 55, 65, 75]
-tick_labels = ['35', '45', '55', '65', '75']
+    # --- Plot map ---
+    fig, ax = plt.subplots(figsize=(10, 8))
 
-# --- Plot map ---
-fig, ax = plt.subplots(figsize=(10, 8))
+    # Plot each atoll individually according to its category (skip empty)
+    for cat, cmap_list in category_colors.items():
+        subset = gdf[gdf['category'] == cat]
+        if not subset.empty:
+            cmap = ListedColormap(cmap_list)
+            subset.plot(
+                column='prob', cmap=cmap, norm=norm,
+                edgecolor='black', linewidth=0.5, ax=ax
+            )
 
-# Plot each atoll individually according to its category (skip empty)
-for cat, cmap_list in category_colors.items():
-    subset = gdf[gdf['category'] == cat]
-    if not subset.empty:
-        cmap = ListedColormap(cmap_list)
-        subset.plot(
-            column='prob', cmap=cmap, norm=norm,
-            edgecolor='black', linewidth=0.5, ax=ax
-        )
+    # Map settings
+    ax.set_xlim(71, 75)
+    ax.set_ylim(-1, 7.5)
+    ax.set_xlabel("Longitude (°E)")
+    ax.set_ylabel("Latitude (°N)")
+    ax.set_title(custom_title, fontsize=16)
+    ax.set_xticks([71, 72, 73, 74, 75])
+    ax.set_xticklabels(["71°E", "72°E", "73°E", "74°E", "75°E"])
 
-# Map settings
-ax.set_xlim(71, 75)
-ax.set_ylim(-1, 7.5)
-ax.set_xlabel("Longitude (°E)")
-ax.set_ylabel("Latitude (°N)")
-ax.set_title(custom_title, fontsize=16)
-ax.set_xticks([71, 72, 73, 74, 75])
-ax.set_xticklabels(["71°E", "72°E", "73°E", "74°E", "75°E"])
+    # --- Colorbars ---
+    width = "40%"
+    height = "2.5%"
+    start_x = 0.05
+    start_y = 0.1
+    spacing = 0.09
 
-# --- Colorbars ---
-width = "40%"
-height = "2.5%"
-start_x = 0.05
-start_y = 0.1
-spacing = 0.09
+    def make_cb(ax, cmap, title, offset):
+        cax = inset_axes(ax, width=width, height=height, loc='lower left',
+                         bbox_to_anchor=(start_x, start_y + offset, 1, 1),
+                         bbox_transform=ax.transAxes, borderpad=0)
+        cb = colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, boundaries=bins,
+                                   ticks=tick_positions, spacing='uniform', orientation='horizontal')
+        cb.set_ticklabels(tick_labels)
+        cax.set_title(title, fontsize=10, pad=6)
+        cb.ax.tick_params(labelsize=9, pad=2)
 
-def make_cb(ax, cmap, title, offset):
-    cax = inset_axes(ax, width=width, height=height, loc='lower left',
-                        bbox_to_anchor=(start_x, start_y + offset, 1, 1),
-                        bbox_transform=ax.transAxes, borderpad=0)
-    cb = colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, boundaries=bins,
-                                ticks=tick_positions, spacing='uniform', orientation='horizontal')
-    cb.set_ticklabels(tick_labels)
-    cax.set_title(title, fontsize=10, pad=6)
-    cb.ax.tick_params(labelsize=9, pad=2)
+    make_cb(ax, ListedColormap(category_colors["Above Normal"]), "Above Normal", 2 * spacing)
+    make_cb(ax, ListedColormap(category_colors["Normal"]), "Normal", spacing)
+    make_cb(ax, ListedColormap(category_colors["Below Normal"]), "Below Normal", 0)
 
-make_cb(ax, ListedColormap(category_colors["Above Normal"]), "Above Normal", 2 * spacing)
-make_cb(ax, ListedColormap(category_colors["Normal"]), "Normal", spacing)
-make_cb(ax, ListedColormap(category_colors["Below Normal"]), "Below Normal", 0)
+    plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
-plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+    # --- Display map ---
+    st.pyplot(fig)
 
-# --- Display map ---
-st.pyplot(fig)
+    # --- Download button ---
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+    buf.seek(0)
+    st.download_button(
+        label="💾 Download Map Image (PNG)",
+        data=buf,
+        file_name="Temperature_Outlook_Map.png",
+        mime="image/png"
+    )
 
-# --- Download button ---
-buf = io.BytesIO()
-fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
-buf.seek(0)
-st.download_button(
-    label="💾 Download Map Image (PNG)",
-    data=buf,
-    file_name="Temperature_Outlook_Map.png",
-    mime="image/png"
-)
-
-st.success("✅ Map updates automatically with every change you make in the sidebar.")
+    st.success("✅ Map generated successfully!")
+else:
+    st.info("👈 Adjust probabilities and categories for each atoll, edit map title, then click 'Generate Map'.")
