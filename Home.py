@@ -17,8 +17,8 @@ try:
     )
     _page_config_ok = True
 except Exception as e:
-    _page_config_ok = False
     _page_config_error = str(e)
+    _page_config_ok = False
 
 # ---------------------------
 # 1. HIDE STREAMLIT UI (Toolbar, Menu, Footer)
@@ -108,7 +108,8 @@ if not _page_config_ok:
 # ---------------------------
 # 4. LOGIN SYSTEM
 # ---------------------------
-USER_CREDENTIALS = {"forecaster": "mms123"}  # Replace later with secure backend
+# HARDCODED CREDENTIALS - REMINDER: Move these to st.secrets for security!
+USER_CREDENTIALS = {"forecaster": "Maldives123"} 
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -117,10 +118,11 @@ if "username" not in st.session_state:
 
 def do_login(username, password):
     username = (username or "").strip()
+    # Check against hardcoded credentials
     if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
         st.session_state.logged_in = True
         st.session_state.username = username
-        # FIX: Replaced st.experimental_rerun() with st.rerun()
+        # FIX: Using st.rerun()
         st.rerun()
     else:
         st.error("Invalid username or password")
@@ -128,7 +130,7 @@ def do_login(username, password):
 def do_logout():
     st.session_state.logged_in = False
     st.session_state.username = ""
-    # FIX: Replaced st.experimental_rerun() with st.rerun()
+    # FIX: Using st.rerun()
     st.rerun()
 
 # ---------------------------
@@ -146,7 +148,7 @@ if not st.session_state.logged_in:
         if submitted:
             do_login(username, password)
 
-    st.info("Demo credentials — Username: `forecaster`  Password: `mms123`")
+    st.info("Demo credentials — Username: `forecaster`  Password: `Maldives123`")
     st.stop()
 
 # ---------------------------
@@ -164,7 +166,3 @@ with col_center:
     st.markdown("---")
 
     st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
-
-# This inline JavaScript link is unnecessary if you use the Log Out button, 
-# but if you need a static link, it should ideally trigger a Python function.
-# st.markdown("<br><center><a href='#' style='color:#1E90FF;' onclick='window.location.reload();'>🔓 Log Out</a></center>", unsafe_allow_html=True)
