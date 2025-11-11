@@ -1,18 +1,72 @@
 # Home.py
 
 import streamlit as st
+import streamlit.components.v1 as components
 
-st.set_page_config(
-    page_title="Forecasters' Tools",
-    page_icon="🗺️",
-    layout="wide"
-)
+# --- Setup is commented out as it relies on external file ---
+# from config import app_setup
+# app_setup("Forecasters' Tools")
 
-# Inject Custom CSS for the Blue Header Bar, Button Styling, and SMALLER SIDEBAR
-st.markdown(
-    """
+# ---------------------------
+# 0. PAGE CONFIG (safe wrapper)
+# ---------------------------
+try:
+    st.set_page_config(
+        page_title="Forecasters' Tools",
+        page_icon="🗺️",
+        layout="wide"
+    )
+    _page_config_ok = True
+except Exception as e:
+    _page_error = str(e)
+    _page_config_ok = False
+
+# ---------------------------
+# 1. HIDE STREAMLIT UI (Toolbar, Menu, Footer) + Custom CSS
+# ---------------------------
+hide_streamlit_style = """
     <style>
-    /* CUSTOM BLUE HEADER BAR */
+    /* Hide Streamlit default UI elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stToolbar"] {visibility: hidden !important;}
+    [data-testid="stDecoration"] {visibility: hidden !important;}
+    [data-testid="stStatusWidget"] {visibility: hidden !important;}
+    div[data-testid="stActionButton"] {visibility: hidden !important;}
+    
+    /* Center and style the login form container */
+    .login-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 50px;
+    }
+    .login-box {
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 200px; /* VERY SMALL WIDTH APPLIED HERE */
+        background-color: white; 
+    }
+    .login-box label {
+        font-weight: bold;
+    }
+    /* Style for the Sign In button within the form */
+    .login-box .stButton button {
+        background-color: #1E90FF;
+        color: white;
+        width: 100%;
+        margin-top: 15px;
+        border: none;
+        height: 35px; /* slightly smaller button */
+    }
+    .login-box .stButton button:hover {
+        background-color: #1a7ae2;
+        color: white;
+    }
+    
+    /* General styles from previous versions */
     .main-header {
         background-color: #1E90FF;
         color: white;
@@ -25,12 +79,7 @@ st.markdown(
         left: 0;
         width: 100%;
         z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Push main content down to account for the fixed header */
-    .st-emotion-cache-1g8i5u7, .st-emotion-cache-6qob1r, .st-emotion-cache-1y4pm5r {
-        padding-top: 80px; 
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     }
     .logout-link {
         position: absolute;
@@ -40,51 +89,123 @@ st.markdown(
         color: white;
         text-decoration: none;
     }
-    /* CUSTOM BUTTON STYLING */
+    .stApp > .main > div {
+        padding-top: 84px;
+    }
+    /* This generic button style is now only for the main page buttons, not login */
     div.stButton {
         display: flex;
         justify-content: center;
-        margin-bottom: 5px; 
+        margin-bottom: 6px;
     }
     .stButton > button {
         width: 250px;
         height: 40px;
         margin: 5px 0;
         font-size: 16px;
-        border: 1px solid #1E90FF; 
+        border: 1px solid #1E90FF;
         color: #1E90FF;
         background-color: white;
+        border-radius: 6px;
     }
-    .st-emotion-cache-1629p8f { /* Hide hamburger menu icon */
-        display: none !important;
+    .stButton > button:hover {
+        background-color: #1E90FF;
+        color: white;
     }
-    
-    /* NEW CSS FOR SMALLER SIDEBAR LINKS */
-    /* Target the container holding the page links (based on inspection) */
-    .st-emotion-cache-1ftcglj { 
-        max-width: 180px; /* Reduced width */
-        margin: auto; /* Center the element within the sidebar */
-    }
-    /* Optional: Shrink the overall sidebar slightly */
-    .st-emotion-cache-1wm38b2 {
-        width: 200px !important;
-    }
-    
     </style>
-    """, 
-    unsafe_allow_html=True
-)
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header">Forecasters\' Tools <a href="#" class="logout-link">Log Out</a></div>', unsafe_allow_html=True)
+# ---------------------------
+# 2. HEADER + STATIC COMPONENT
+# ---------------------------
+HEADER_HTML = """
+<div class="main-header" id="mainHeader">
+  Forecasters' Tools
+  <span class="logout-link" id="logoutAnchor"></span>
+</div>
+"""
+components.html(HEADER_HTML, height=10)
 
-# Main Page Content (Below the Header)
+
+# ---------------------------
+# 3. PAGE CONFIG ERROR HANDLER
+# ---------------------------
+if not _page_config_ok:
+    st.warning(
+        "⚠️ Page configuration failed. Check 'Manage app → Logs' for details."
+    )
+    st.caption(f"Error detail: {_page_error}")
+
+# ---------------------------
+# 4. LOGIN SYSTEM
+# ---------------------------
+# Using hardcoded credentials as requested by user
+USER_CREDENTIALS = {"forecaster": "Maldives123"} 
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
+
+def do_login(username, password):
+    username = (username or "").strip()
+    if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
+        st.session_state.logged_in = True
+        st.session_state.username = username
+        st.rerun()
+    else:
+        st.error("Invalid username or password")
+
+def do_logout():
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.rerun()
+
+# ---------------------------
+# 5. LOGIN PAGE (ENHANCED UI)
+# ---------------------------
+if not st.session_state.logged_in:
+    # Title and subtitle
+    st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>🔒 Forecasters' Tools — Sign In</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; margin-top:-10px; color:#555;'>Please sign in to access MMS tools.</p>", unsafe_allow_html=True)
+
+    # Centering the login box
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
+        
+        # Streamlit Form
+        with st.form("login_form"):
+            # NOTE: st.text_input uses the full width of its parent container (.login-box)
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Sign In")
+            
+            if submitted:
+                do_login(username, password)
+        
+        st.markdown('</div>', unsafe_allow_html=True) # Close login-box
+    st.markdown('</div>', unsafe_allow_html=True) # Close login-container
+    
+    st.stop()
+
+# ---------------------------
+# 6. MAIN APP (After Login)
+# ---------------------------
+header_cols = st.columns([1, 9, 1])
+with header_cols[2]:
+    if st.button(f"Log Out ({st.session_state.username})"):
+        do_logout()
+
 col_left, col_center, col_right = st.columns([1, 2, 1])
 
 with col_center:
-    st.markdown("<h3 style='text-align: center; margin-top: 20px;'>Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-top: 8px;'>Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # Placeholder buttons
+    # Placeholder buttons (including Cloud Sketch)
     st.button("Tide Chart")
     st.button("Alert Graphic")
     st.button("Forecast Graphic")
@@ -92,6 +213,7 @@ with col_center:
     st.button("Satellite Image")
     st.button("Forecast App (Testing)")
     st.button("Weather News")
+    st.button("Cloud Sketch") 
 
     st.markdown("---")
-    st.info("Your custom map tools are now available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the Streamlit sidebar menu.")
+    st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
