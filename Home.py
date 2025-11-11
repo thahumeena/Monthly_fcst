@@ -160,24 +160,8 @@ with col_center:
     st.markdown("<h3 style='text-align: center; margin-top: 8px;'>Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
-    if st.button("Tide Chart"):
-        st.info("Tide Chart clicked — wire this to a page or callback.")
-    if st.button("Alert Graphic"):
-        st.info("Alert Graphic clicked — wire this to a page or callback.")
-    if st.button("Forecast Graphic"):
-        st.info("Forecast Graphic clicked — wire this to a page or callback.")
-    if st.button("Weekend Forecast"):
-        st.info("Weekend Forecast clicked — wire this to a page or callback.")
-    if st.button("Satellite Image"):
-        st.info("Satellite Image clicked — wire this to a page or callback.")
-    if st.button("Forecast App (Testing)"):
-        st.info("Forecast App (Testing) clicked — wire this to a page or callback.")
-    if st.button("Weather News"):
-        st.info("Weather News clicked — wire this to a page or callback.")
+    # The section with the seven st.button() calls has been removed.
 
-    st.markdown("---")
     st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
 
 st.markdown("<br><center><a href='#' style='color:#1E90FF;' onclick='window.location.reload();'>🔓 Log Out</a></center>", unsafe_allow_html=True)
-
-
