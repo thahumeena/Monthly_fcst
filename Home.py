@@ -46,7 +46,7 @@ hide_streamlit_style = """
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         width: 100%;
-        max-width: 200px; /* VERY SMALL WIDTH APPLIED HERE */
+        max-width: 200px; /* NEW, VERY SMALL WIDTH APPLIED HERE */
         background-color: white; 
     }
     .login-box label {
@@ -178,7 +178,6 @@ if not st.session_state.logged_in:
         
         # Streamlit Form
         with st.form("login_form"):
-            # NOTE: st.text_input uses the full width of its parent container (.login-box)
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             submitted = st.form_submit_button("Sign In")
