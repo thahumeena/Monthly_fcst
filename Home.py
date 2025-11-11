@@ -35,7 +35,7 @@ hide_streamlit_style = """
     .login-container {
         display: flex;
         justify-content: center;
-        margin-top: 150px; /* Increased margin to center the smaller login box vertically */
+        margin-top: 10px; /* Adjusted margin */
     }
     .login-box {
         padding: 30px;
@@ -161,21 +161,19 @@ def do_logout():
     st.rerun()
 
 # ---------------------------
-# 5. LOGIN PAGE (SECURED AND SIMPLIFIED)
+# 5. LOGIN PAGE (SECURED AND MINIMAL)
 # ---------------------------
 if not st.session_state.logged_in:
-    # Removed: st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center;'>🔒 Forecasters' Tools</h2>", unsafe_allow_html=True)
-    # Removed: st.markdown("<p style='text-align:center; margin-top:-10px; color:#555;'>Please sign in to access MMS tools.</p>", unsafe_allow_html=True)
-
+    # Centered Title (only "Forecasters' Tools")
+    st.markdown("<h2 style='text-align:center; margin-top: 100px;'>🔒 Forecasters' Tools</h2>", unsafe_allow_html=True)
+    
     # Centering the small login box
     st.markdown('<div class="login-container">', unsafe_allow_html=True)
     with st.container():
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
         
-        # Streamlit Form
+        # Streamlit Form with no labels, only placeholders
         with st.form("login_form"):
-            # Removed labels and added placeholders instead
             username = st.text_input(label="", placeholder="Username")
             password = st.text_input(label="", placeholder="Password", type="password")
             submitted = st.form_submit_button("Sign In")
@@ -186,7 +184,7 @@ if not st.session_state.logged_in:
         st.markdown('</div>', unsafe_allow_html=True) # Close login-box
     st.markdown('</div>', unsafe_allow_html=True) # Close login-container
     
-    # Crucially, stop here if not logged in. This prevents the sidebar from loading page links.
+    # Stops execution of the rest of the script if not logged in.
     st.stop()
 
 # ---------------------------
