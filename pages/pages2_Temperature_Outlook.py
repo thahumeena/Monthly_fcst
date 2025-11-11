@@ -9,10 +9,11 @@ from matplotlib import colorbar
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import io
 import warnings
-import numpy as np # <-- FIX: numpy import added
+import numpy as np # <-- FIXED: numpy import added
 
 # --- AUTHENTICATION & CONFIG ---
 if not st.session_state.get('authenticated', False):
+    # This check ensures the user cannot access the page directly
     st.error("Please log in on the Home page to access this tool.")
     st.stop()
 
@@ -22,6 +23,7 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom CSS for Header (Copied from Home.py for consistent look)
 st.markdown(
     """
     <style>
@@ -60,7 +62,7 @@ warnings.filterwarnings("ignore", message="missing ScriptRunContext")
 warnings.filterwarnings("ignore", message="not compatible with tight_layout")
 
 # --- Load shapefile ---
-shp = 'data/Atoll_boundary2016.shp' # <-- FIXED path quoting
+shp = 'data/Atoll_boundary2016.shp' # <-- FIXED: Corrected path quoting
 
 @st.cache_data # <-- Added caching
 def load_data(path):
@@ -73,11 +75,11 @@ def load_data(path):
 try:
     gdf, unique_atolls = load_data(shp)
 except Exception as e:
-    st.error(f"Error loading shapefile: {e}. Ensure 'data/Atoll_boundary2016.shp' exists.")
+    st.error(f"Error loading shapefile: {e}. Ensure 'data/Atoll_boundary2016.shp' exists in the expected location.")
     st.stop()
 
 
-# --- Default probabilities ---
+# --- Default probabilities (Used only for initial slider defaults) ---
 default_probs = {
     'Haa Alifu Atoll': 65, 'Haa Dhaalu Atoll': 70, 'Noonu Atoll': 68,
     'Baa Atoll': 72, 'Lhaviyani Atoll': 65, 'Raa Atoll': 68,
@@ -108,7 +110,10 @@ user_categories = {}
 
 # Use a form to group inputs and prevent unexpected updates
 with st.sidebar.form("atoll_temp_form"):
-    for atoll in unique_atolls:
+    # Iterate over unique atolls found in the data, falling back to default_probs for initial values
+    atolls_to_show = [a for a in unique_atolls if a in default_probs] 
+    
+    for atoll in atolls_to_show:
         default = default_probs.get(atoll, 50)
         st.markdown(f"**{atoll}**")
         # Ensure unique keys for Streamlit widgets
@@ -123,7 +128,7 @@ with st.sidebar.form("atoll_temp_form"):
 
 
 if generate_map:
-    # Use only atolls present in the loaded data
+    # Use only atolls present in the loaded data and the user inputs
     valid_atolls = [a for a in user_probs.keys() if a in gdf['Name'].values]
     
     gdf['prob'] = gdf['Name'].map({a: user_probs.get(a) for a in valid_atolls})
