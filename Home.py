@@ -154,30 +154,7 @@ if not st.session_state.logged_in:
     # Centered Title (only "Forecasters' Tools")
     st.markdown("<h2 style='text-align:center; margin-top: 100px;'>🔒 Forecasters' Tools</h2>", unsafe_allow_html=True)
     
-    # Centering the small login box
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    with st.container():
-        st.markdown('<div class="login-box">', unsafe_allow_html=True)
-        
-        # Streamlit Form with no labels, only placeholders
-        with st.form("login_form"):
-            username = st.text_input(label="", placeholder="Username")
-            password = st.text_input(label="", placeholder="Password", type="password")
-            submitted = st.form_submit_button("Sign In")
-            
-            if submitted:
-                # ---------------------------------------------
-                # LOGIN LOGIC MOVED DIRECTLY INTO 'if submitted'
-                # ---------------------------------------------
-                username_clean = (username or "").strip()
-                
-                if username_clean in USER_CREDENTIALS and USER_CREDENTIALS[username_clean] == password:
-                    st.session_state.logged_in = True
-                    st.session_state.username = username_clean
-                    st.rerun()
-                else:
-                    st.error("Invalid username or password")
-                # ---------------------------------------------
+   
 
         
         st.markdown('</div>', unsafe_allow_html=True) # Close login-box
@@ -202,4 +179,5 @@ with col_center:
     st.markdown("---")
 
     st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
+
 
