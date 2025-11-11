@@ -46,7 +46,7 @@ hide_streamlit_style = """
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         width: 100%;
-        max-width: 300px; /* NARROWER WIDTH FOR INPUTS */
+        max-width: 250px; /* NARROWER WIDTH APPLIED HERE */
         background-color: white; 
     }
     .login-box label {
@@ -204,7 +204,7 @@ with col_center:
     st.markdown("<h3 style='text-align: center; margin-top: 8px;'>Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # Placeholder buttons (updated list)
+    # Placeholder buttons (including the newly added "Cloud Sketch")
     st.button("Tide Chart")
     st.button("Alert Graphic")
     st.button("Forecast Graphic")
@@ -212,7 +212,7 @@ with col_center:
     st.button("Satellite Image")
     st.button("Forecast App (Testing)")
     st.button("Weather News")
-    st.button("Cloud Sketch") # <-- NEW BUTTON ADDED HERE
+    st.button("Cloud Sketch") 
 
     st.markdown("---")
     st.info("Your custom map tools are available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the sidebar.")
