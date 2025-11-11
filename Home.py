@@ -9,7 +9,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Hardcoded Credentials
+# Hardcoded Credentials (You should use your own secure method for production)
 USERNAME = "forecaster"
 PASSWORD = "Maldives123"
 
@@ -44,7 +44,7 @@ st.markdown(
         padding-top: 80px; 
     }
     
-    /* CUSTOM BUTTON STYLING (Kept for potential future use) */
+    /* CUSTOM BUTTON STYLING (Kept for consistency but no longer used in body) */
     div.stButton {
         display: flex;
         justify-content: center;
@@ -92,7 +92,7 @@ if st.session_state['authenticated']:
         
         # Placeholder buttons removed as requested.
 
-        st.info("The forecast tools are available as 'Rainfall Outlook', 'Temperature Outlook', and 'Viber Fcst' in the Streamlit sidebar menu.")
+        st.info("Your custom map tools are now available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the Streamlit sidebar menu.")
 
 else:
     # --- LOGIN FORM VIEW ---
