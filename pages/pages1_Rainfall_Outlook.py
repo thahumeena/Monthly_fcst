@@ -1,3 +1,5 @@
+from config import app_setup
+app_setup("Forecasters' Tools")
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,53 +10,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import streamlit as st
 from io import BytesIO
 
-st.set_page_config(
-    page_title="Rainfall Outlook",
-    page_icon="🌧️",
-    layout="wide"
-)
-
-# --- Configuration for Header and Hiding Icons ---
-st.markdown(
-    """
-    <style>
-    /* 1. HIDE DEVELOPER ICONS (Share, Star, Pencil, GitHub) */
-    .st-emotion-cache-12fmw9a { 
-        visibility: hidden;
-        width: 0px;
-        height: 0px;
-    }
-    
-    /* 2. CUSTOM BLUE HEADER BAR (Copied for consistency) */
-    .main-header {
-        background-color: #1E90FF;
-        color: white;
-        padding: 10px 0;
-        text-align: center;
-        font-size: 28px;
-        font-weight: bold;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    /* 3. Push main content down to account for the fixed header */
-    .st-emotion-cache-1g8i5u7, .st-emotion-cache-6qob1r, .st-emotion-cache-1y4pm5r {
-        padding-top: 80px; 
-    }
-    </style>
-    """, 
-    unsafe_allow_html=True
-)
-
-st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
-st.title("🌧️ Rainfall Outlook Map")
-# ------------------------------
-
 # Load shapefile and clip extent
-# CRITICAL FIX: Added quotes around the file path
 shp = 'data/Atoll_boundary2016.shp'
 gdf = gpd.read_file(shp).to_crs(epsg=4326)
 bbox = box(71, -1, 75, 7.5)
@@ -62,6 +18,7 @@ gdf = gdf[gdf.intersects(bbox)]
 
 # ✅ Clean missing or invalid atoll names
 gdf['Name'] = gdf['Name'].fillna("Unknown")
+# or to skip missing ones: gdf = gdf.dropna(subset=['Name'])
 
 # ✅ Ensure unique atoll names
 unique_atolls = sorted(gdf['Name'].unique().tolist())
@@ -170,3 +127,6 @@ st.download_button(
     file_name='rainfall_outlook_map.png',
     mime='image/png'
 )
+
+
+
