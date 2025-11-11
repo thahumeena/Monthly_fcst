@@ -9,7 +9,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Hardcoded Credentials (Use the credentials you provided in the previous interaction)
+# Hardcoded Credentials
 USERNAME = "forecaster"
 PASSWORD = "Maldives123"
 
@@ -19,7 +19,7 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state['username'] = None
 
-# Custom CSS for Header and Styling (Keeping your original CSS structure)
+# Inject Custom CSS for the Blue Header Bar and Button Styling
 st.markdown(
     """
     <style>
@@ -38,11 +38,13 @@ st.markdown(
         z-index: 1000;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
     /* Push main content down to account for the fixed header */
     .st-emotion-cache-1g8i5u7, .st-emotion-cache-6qob1r, .st-emotion-cache-1y4pm5r {
-        padding-top: 80px;
+        padding-top: 80px; 
     }
-    /* CUSTOM BUTTON STYLING */
+    
+    /* CUSTOM BUTTON STYLING (Kept for potential future use) */
     div.stButton {
         display: flex;
         justify-content: center;
@@ -61,7 +63,7 @@ st.markdown(
         display: none !important;
     }
     </style>
-    """,
+    """, 
     unsafe_allow_html=True
 )
 
@@ -74,7 +76,6 @@ def logout():
 # --- Authentication Logic ---
 if st.session_state['authenticated']:
     # --- LOGGED IN VIEW ---
-    # Inject a functional Logout button/link via the sidebar
     with st.sidebar:
         st.title("Navigation")
         st.markdown("---")
@@ -82,23 +83,16 @@ if st.session_state['authenticated']:
 
     st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
 
+    # Main Page Content (Below the Header)
     col_left, col_center, col_right = st.columns([1, 2, 1])
 
     with col_center:
         st.markdown(f"<h3 style='text-align: center; margin-top: 20px;'>Welcome, {st.session_state['username']}! Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
         st.markdown("---")
+        
+        # Placeholder buttons removed as requested.
 
-        # Your original placeholder buttons
-        st.button("Tide Chart")
-        st.button("Alert Graphic")
-        st.button("Forecast Graphic")
-        st.button("Weekend Forecast")
-        st.button("Satellite Image")
-        st.button("Forecast App (Testing)")
-        st.button("Weather News")
-
-        st.markdown("---")
-        st.info("Your custom map tools are now available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the Streamlit sidebar menu.")
+        st.info("The forecast tools are available as 'Rainfall Outlook', 'Temperature Outlook', and 'Viber Fcst' in the Streamlit sidebar menu.")
 
 else:
     # --- LOGIN FORM VIEW ---
@@ -117,7 +111,7 @@ else:
                 if username_input == USERNAME and password_input == PASSWORD:
                     st.session_state['authenticated'] = True
                     st.session_state['username'] = username_input
-                    st.success("Login successful! Redirecting...")
+                    st.success("Login successful! Redirecting to the main page...")
                     st.rerun()
                 else:
                     st.error("Invalid Username or Password. Please try again.")
