@@ -12,6 +12,7 @@ from io import BytesIO
 
 # --- AUTHENTICATION & CONFIG ---
 if not st.session_state.get('authenticated', False):
+    # This check ensures the user cannot access the page directly
     st.error("Please log in on the Home page to access this tool.")
     st.stop()
 
@@ -21,6 +22,7 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom CSS for Header (Copied from Home.py for consistent look)
 st.markdown(
     """
     <style>
@@ -55,8 +57,7 @@ st.title("🌧️ Rainfall Outlook Map")
 # ------------------------------
 
 # Load shapefile and clip extent
-# FIX: Corrected shapefile path quotation
-shp = 'data/Atoll_boundary2016.shp'
+shp = 'data/Atoll_boundary2016.shp' # <-- FIXED: Corrected path quoting
 
 @st.cache_data
 def load_data(path):
@@ -69,7 +70,7 @@ def load_data(path):
 try:
     gdf, unique_atolls = load_data(shp)
 except Exception as e:
-    st.error(f"Error loading shapefile: {e}. Ensure 'data/Atoll_boundary2016.shp' exists.")
+    st.error(f"Error loading shapefile: {e}. Ensure 'data/Atoll_boundary2016.shp' exists in the expected location.")
     st.stop()
 
 
@@ -87,7 +88,7 @@ st.sidebar.write("Select category and percentage for each atoll:")
 selected_categories = {}
 selected_percentages = {}
 
-# Sidebar inputs for each unique atoll (Using a form to update all at once is better)
+# Sidebar inputs for each unique atoll (Using a form for better control in Streamlit)
 with st.sidebar.form("atoll_input_form"):
     for i, atoll in enumerate(unique_atolls):
         st.markdown(f"**{atoll}**")
@@ -124,12 +125,11 @@ gdf['prob'] = gdf['Name'].map(selected_percentages)
 # Plotting
 fig, ax = plt.subplots(figsize=(12, 10))
 
-# Plot each category with its respective color map (Structure preserved)
+# Plot each category with its respective color map
 for cat, cmap in zip(['Below Normal', 'Normal', 'Above Normal'],
                      [cmap_below, cmap_normal, cmap_above]):
     subset = gdf[gdf['category'] == cat]
     if not subset.empty:
-        # This is the correct GeoDataFrame plotting method
         subset.plot(
             column='prob', cmap=cmap, norm=norm,
             edgecolor='black', linewidth=0.5, ax=ax
