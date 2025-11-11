@@ -19,7 +19,7 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state['username'] = None
 
-# Custom CSS for Header and Styling (Adapted from your uploaded Home.py)
+# Custom CSS for Header and Styling
 st.markdown(
     """
     <style>
@@ -89,6 +89,8 @@ else:
         st.subheader("Sign In")
         with st.form("login_form"):
             username_input = st.text_input("Username")
+            # Use the requested username and password
+            # username: forecaster. password Maldives123
             password_input = st.text_input("Password", type="password")
             submitted = st.form_submit_button("Sign In")
 
@@ -102,5 +104,4 @@ else:
                     st.error("Invalid Username or Password. Please try again.")
 
     # Stop the execution of the home page until the user is authenticated
-    # This prevents the navigation from showing on the login screen
     st.stop()
