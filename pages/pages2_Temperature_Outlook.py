@@ -15,7 +15,8 @@ warnings.filterwarnings("ignore", message="missing ScriptRunContext")
 warnings.filterwarnings("ignore", message="not compatible with tight_layout")
 
 # --- Load shapefile ---
-shp = 'data/Atoll_boundary2016.shp'
+# NOTE: The path 'data/Atoll_boundary2016.shp' assumes the file is available at that relative path.
+shp = 'data/Atoll_boundary2016.shp' 
 gdf = gpd.read_file(shp).to_crs(epsg=4326)
 bbox = box(71, -1, 75, 7.5)
 gdf = gdf[gdf.intersects(bbox)]
@@ -63,88 +64,85 @@ custom_title = st.sidebar.text_input(
 user_probs = {}
 user_categories = {}
 for atoll, default in default_probs.items():
-    st.sidebar.markdown(f"**{atoll}**")
-    user_probs[atoll] = st.sidebar.slider(f"{atoll} Probability", 0, 100, default, step=1)
-    user_categories[atoll] = st.sidebar.selectbox(
-        f"{atoll} Category",
-        ["Above Normal", "Normal", "Below Normal"],
-        index=1
-    )
+    # Use st.expander for cleaner sidebar UI with many inputs
+    with st.sidebar.expander(f"**{atoll}**"):
+        user_probs[atoll] = st.slider(f"Probability", 0, 100, default, step=1, key=f"prob_{atoll}")
+        user_categories[atoll] = st.selectbox(
+            f"Category",
+            ["Above Normal", "Normal", "Below Normal"],
+            index=1,
+            key=f"cat_{atoll}"
+        )
 
-generate_map = st.sidebar.button("🗺️ Generate Map")
+# --- MAP GENERATION (AUTOGENERATE) ---
 
-if generate_map:
-    gdf['prob'] = gdf['Name'].map(user_probs)
-    gdf['category'] = gdf['Name'].map(user_categories)
+# Map user inputs to GeoDataFrame
+gdf['prob'] = gdf['Name'].map(user_probs)
+gdf['category'] = gdf['Name'].map(user_categories)
 
-    # --- Colormap setup ---
-    bins = [0, 35, 45, 55, 65, 75, 100]
-    norm = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
-    tick_positions = [35, 45, 55, 65, 75]
-    tick_labels = ['35', '45', '55', '65', '75']
+# --- Colormap setup ---
+bins = [0, 35, 45, 55, 65, 75, 100]
+norm = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
+tick_positions = [35, 45, 55, 65, 75]
+tick_labels = ['35', '45', '55', '65', '75']
 
-    # --- Plot map ---
-    fig, ax = plt.subplots(figsize=(10, 8))
+# --- Plot map ---
+fig, ax = plt.subplots(figsize=(10, 8))
 
-    # Plot each atoll individually according to its category (skip empty)
-    for cat, cmap_list in category_colors.items():
-        subset = gdf[gdf['category'] == cat]
-        if not subset.empty:
-            cmap = ListedColormap(cmap_list)
-            subset.plot(
-                column='prob', cmap=cmap, norm=norm,
-                edgecolor='black', linewidth=0.5, ax=ax
-            )
+# Plot each atoll individually according to its category (skip empty)
+for cat, cmap_list in category_colors.items():
+    subset = gdf[gdf['category'] == cat]
+    if not subset.empty:
+        cmap = ListedColormap(cmap_list)
+        subset.plot(
+            column='prob', cmap=cmap, norm=norm,
+            edgecolor='black', linewidth=0.5, ax=ax
+        )
 
-    # Map settings
-    ax.set_xlim(71, 75)
-    ax.set_ylim(-1, 7.5)
-    ax.set_xlabel("Longitude (°E)")
-    ax.set_ylabel("Latitude (°N)")
-    ax.set_title(custom_title, fontsize=16)
-    ax.set_xticks([71, 72, 73, 74, 75])
-    ax.set_xticklabels(["71°E", "72°E", "73°E", "74°E", "75°E"])
+# Map settings
+ax.set_xlim(71, 75)
+ax.set_ylim(-1, 7.5)
+ax.set_xlabel("Longitude (°E)")
+ax.set_ylabel("Latitude (°N)")
+ax.set_title(custom_title, fontsize=16)
+ax.set_xticks([71, 72, 73, 74, 75])
+ax.set_xticklabels(["71°E", "72°E", "73°E", "74°E", "75°E"])
 
-    # --- Colorbars ---
-    width = "40%"
-    height = "2.5%"
-    start_x = 0.05
-    start_y = 0.1
-    spacing = 0.09
+# --- Colorbars ---
+width = "40%"
+height = "2.5%"
+start_x = 0.05
+start_y = 0.1
+spacing = 0.09
 
-    def make_cb(ax, cmap, title, offset):
-        cax = inset_axes(ax, width=width, height=height, loc='lower left',
-                         bbox_to_anchor=(start_x, start_y + offset, 1, 1),
-                         bbox_transform=ax.transAxes, borderpad=0)
-        cb = colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, boundaries=bins,
-                                   ticks=tick_positions, spacing='uniform', orientation='horizontal')
-        cb.set_ticklabels(tick_labels)
-        cax.set_title(title, fontsize=10, pad=6)
-        cb.ax.tick_params(labelsize=9, pad=2)
+def make_cb(ax, cmap, title, offset):
+    cax = inset_axes(ax, width=width, height=height, loc='lower left',
+                     bbox_to_anchor=(start_x, start_y + offset, 1, 1),
+                     bbox_transform=ax.transAxes, borderpad=0)
+    cb = colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, boundaries=bins,
+                               ticks=tick_positions, spacing='uniform', orientation='horizontal')
+    cb.set_ticklabels(tick_labels)
+    cax.set_title(title, fontsize=10, pad=6)
+    cb.ax.tick_params(labelsize=9, pad=2)
 
-    make_cb(ax, ListedColormap(category_colors["Above Normal"]), "Above Normal", 2 * spacing)
-    make_cb(ax, ListedColormap(category_colors["Normal"]), "Normal", spacing)
-    make_cb(ax, ListedColormap(category_colors["Below Normal"]), "Below Normal", 0)
+make_cb(ax, ListedColormap(category_colors["Above Normal"]), "Above Normal", 2 * spacing)
+make_cb(ax, ListedColormap(category_colors["Normal"]), "Normal", spacing)
+make_cb(ax, ListedColormap(category_colors["Below Normal"]), "Below Normal", 0)
 
-    plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 
-    # --- Display map ---
-    st.pyplot(fig)
+# --- Display map ---
+st.pyplot(fig)
 
-    # --- Download button ---
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
-    buf.seek(0)
-    st.download_button(
-        label="💾 Download Map Image (PNG)",
-        data=buf,
-        file_name="Temperature_Outlook_Map.png",
-        mime="image/png"
-    )
+# --- Download button ---
+buf = io.BytesIO()
+fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+buf.seek(0)
+st.download_button(
+    label="💾 Download Map Image (PNG)",
+    data=buf,
+    file_name="Temperature_Outlook_Map.png",
+    mime="image/png"
+)
 
-    st.success("✅ Map generated successfully!")
-else:
-    st.info("👈 Adjust probabilities and categories for each atoll, edit map title, then click 'Generate Map'.")
-
-
-
+st.success("✅ Map autogenerated successfully! Adjust the inputs in the sidebar to update the map.")
