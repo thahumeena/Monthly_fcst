@@ -1,5 +1,3 @@
-# pages1_Rainfall_Outlook.py
-
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,23 +8,24 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import streamlit as st
 from io import BytesIO
 
-# --- AUTHENTICATION & CONFIG ---
-if not st.session_state.get('authenticated', False):
-    # This check ensures the user cannot access the page directly
-    st.error("Please log in on the Home page to access this tool.")
-    st.stop()
-
 st.set_page_config(
     page_title="Rainfall Outlook",
     page_icon="🌧️",
     layout="wide"
 )
 
-# Custom CSS for Header (Copied from Home.py for consistent look)
+# --- Configuration for Header and Hiding Icons ---
 st.markdown(
     """
     <style>
-    /* CUSTOM BLUE HEADER BAR */
+    /* 1. HIDE DEVELOPER ICONS (Share, Star, Pencil, GitHub) */
+    .st-emotion-cache-12fmw9a { 
+        visibility: hidden;
+        width: 0px;
+        height: 0px;
+    }
+    
+    /* 2. CUSTOM BLUE HEADER BAR (Copied for consistency) */
     .main-header {
         background-color: #1E90FF;
         color: white;
@@ -41,38 +40,31 @@ st.markdown(
         z-index: 1000;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    /* Push main content down to account for the fixed header */
+    /* 3. Push main content down to account for the fixed header */
     .st-emotion-cache-1g8i5u7, .st-emotion-cache-6qob1r, .st-emotion-cache-1y4pm5r {
         padding-top: 80px; 
-    }
-    .st-emotion-cache-1629p8f { /* Hide hamburger menu icon */
-        display: none !important;
     }
     </style>
     """, 
     unsafe_allow_html=True
 )
+
 st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
 st.title("🌧️ Rainfall Outlook Map")
 # ------------------------------
 
 # Load shapefile and clip extent
-shp = 'data/Atoll_boundary2016.shp' # <-- FIXED: Corrected path quoting
+# CRITICAL FIX: Added quotes around the file path
+shp = 'data/Atoll_boundary2016.shp'
+gdf = gpd.read_file(shp).to_crs(epsg=4326)
+bbox = box(71, -1, 75, 7.5)
+gdf = gdf[gdf.intersects(bbox)]
 
-@st.cache_data
-def load_data(path):
-    gdf = gpd.read_file(path).to_crs(epsg=4326)
-    bbox = box(71, -1, 75, 7.5)
-    gdf = gdf[gdf.intersects(bbox)]
-    gdf['Name'] = gdf['Name'].fillna("Unknown")
-    return gdf, sorted(gdf['Name'].unique().tolist())
+# ✅ Clean missing or invalid atoll names
+gdf['Name'] = gdf['Name'].fillna("Unknown")
 
-try:
-    gdf, unique_atolls = load_data(shp)
-except Exception as e:
-    st.error(f"Error loading shapefile: {e}. Ensure 'data/Atoll_boundary2016.shp' exists in the expected location.")
-    st.stop()
-
+# ✅ Ensure unique atoll names
+unique_atolls = sorted(gdf['Name'].unique().tolist())
 
 # Editable map title (sidebar)
 map_title = st.sidebar.text_input("Edit Map Title:", "Maximum Rainfall Outlook for OND 2025")
@@ -88,18 +80,13 @@ st.sidebar.write("Select category and percentage for each atoll:")
 selected_categories = {}
 selected_percentages = {}
 
-# Sidebar inputs for each unique atoll (Using a form for better control in Streamlit)
-with st.sidebar.form("atoll_input_form"):
-    for i, atoll in enumerate(unique_atolls):
-        st.markdown(f"**{atoll}**")
-        selected = st.selectbox(f"{atoll} Category", categories, index=1, key=f"{atoll}_cat_{i}")
-        percent = st.slider(f"{atoll} %", min_value=0, max_value=100, value=60, step=5, key=f"{atoll}_perc_{i}")
-        
-        selected_categories[atoll] = selected
-        selected_percentages[atoll] = percent
+# Sidebar inputs for each unique atoll
+for i, atoll in enumerate(unique_atolls):
+    selected = st.sidebar.selectbox(f"{atoll} Category", categories, index=1, key=f"{atoll}_cat_{i}")
+    percent = st.sidebar.slider(f"{atoll} %", min_value=0, max_value=100, value=60, step=5, key=f"{atoll}_perc_{i}")
     
-    st.form_submit_button("Update Map")
-
+    selected_categories[atoll] = selected
+    selected_percentages[atoll] = percent
 
 # Map category colors
 cmap_below = ListedColormap([
@@ -118,7 +105,7 @@ norm = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
 tick_positions = [35, 45, 55, 65, 75]
 tick_labels = ['35', '45', '55', '65', '75']
 
-# Map selections back to gdf
+# ✅ Map selections back to gdf (so all parts of same atoll share same values)
 gdf['category'] = gdf['Name'].map(selected_categories)
 gdf['prob'] = gdf['Name'].map(selected_percentages)
 
@@ -162,7 +149,7 @@ def make_cb(ax, cmap, title, offset):
     cax.set_title(title, fontsize=10, pad=6)
     cb.ax.tick_params(labelsize=9, pad=2)
 
-# Colorbar display
+# ✅ Rearranged order — Above on top, Normal middle, Below bottom
 make_cb(ax, cmap_above, "Above Normal", 2 * spacing)
 make_cb(ax, cmap_normal, "Normal", spacing)
 make_cb(ax, cmap_below, "Below Normal", 0)
