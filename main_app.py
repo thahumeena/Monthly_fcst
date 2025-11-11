@@ -15,11 +15,6 @@ with col1:
     if st.button("Temperature Outlook Map"):
         subprocess.Popen(["streamlit", "run", "map_app_temperature.py"])
 
-with col2:
-    if st.button("Alert Graphic"):
-        st.info("Coming soon!")
-    if st.button("Weekend Forecast"):
-        st.info("Coming soon!")
-
 st.markdown("---")
 st.caption("Developed by Maldives Meteorological Service")
+
