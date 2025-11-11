@@ -1,6 +1,7 @@
 # requirements.txt
 streamlit
+pandas
 geopandas
-matplotlib
-numpy
+fiona
+pyproj
 shapely
