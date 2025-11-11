@@ -1,29 +1,31 @@
-# Home.py
-
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import numpy as np
+from shapely.geometry import box
+from matplotlib.colors import ListedColormap, BoundaryNorm
+from matplotlib import colorbar
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import streamlit as st
+from io import BytesIO
 
-# --- Configuration ---
 st.set_page_config(
-    page_title="Forecasters' Tools",
-    page_icon="🗺️",
+    page_title="Rainfall Outlook",
+    page_icon="🌧️",
     layout="wide"
 )
 
-# Hardcoded Credentials (You should use your own secure method for production)
-USERNAME = "forecaster"
-PASSWORD = "Maldives123"
-
-# Initialize session state for authentication
-if 'authenticated' not in st.session_state:
-    st.session_state['authenticated'] = False
-if 'username' not in st.session_state:
-    st.session_state['username'] = None
-
-# Inject Custom CSS for the Blue Header Bar and Button Styling
+# --- Configuration for Header and Hiding Icons ---
 st.markdown(
     """
     <style>
-    /* CUSTOM BLUE HEADER BAR */
+    /* 1. HIDE DEVELOPER ICONS (Share, Star, Pencil, GitHub) */
+    .st-emotion-cache-12fmw9a { 
+        visibility: hidden;
+        width: 0px;
+        height: 0px;
+    }
+    
+    /* 2. CUSTOM BLUE HEADER BAR (Copied for consistency) */
     .main-header {
         background-color: #1E90FF;
         color: white;
@@ -38,83 +40,133 @@ st.markdown(
         z-index: 1000;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-
-    /* Push main content down to account for the fixed header */
+    /* 3. Push main content down to account for the fixed header */
     .st-emotion-cache-1g8i5u7, .st-emotion-cache-6qob1r, .st-emotion-cache-1y4pm5r {
         padding-top: 80px; 
-    }
-    
-    /* CUSTOM BUTTON STYLING (Kept for consistency but no longer used in body) */
-    div.stButton {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 5px; 
-    }
-    .stButton > button {
-        width: 250px;
-        height: 40px;
-        margin: 5px 0;
-        font-size: 16px;
-        border: 1px solid #1E90FF; 
-        color: #1E90FF;
-        background-color: white;
-    }
-    .st-emotion-cache-1629p8f { /* Hide hamburger menu icon */
-        display: none !important;
     }
     </style>
     """, 
     unsafe_allow_html=True
 )
 
-def logout():
-    """Clears authentication state and reruns the app to show login."""
-    st.session_state['authenticated'] = False
-    st.session_state['username'] = None
-    st.rerun()
+st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
+st.title("🌧️ Rainfall Outlook Map")
+# ------------------------------
 
-# --- Authentication Logic ---
-if st.session_state['authenticated']:
-    # --- LOGGED IN VIEW ---
-    with st.sidebar:
-        st.title("Navigation")
-        st.markdown("---")
-        st.button("Log Out", on_click=logout)
+# Load shapefile and clip extent
+# CRITICAL FIX: Added quotes around the file path
+shp = 'data/Atoll_boundary2016.shp'
+gdf = gpd.read_file(shp).to_crs(epsg=4326)
+bbox = box(71, -1, 75, 7.5)
+gdf = gdf[gdf.intersects(bbox)]
 
-    st.markdown('<div class="main-header">Forecasters\' Tools</div>', unsafe_allow_html=True)
+# ✅ Clean missing or invalid atoll names
+gdf['Name'] = gdf['Name'].fillna("Unknown")
 
-    # Main Page Content (Below the Header)
-    col_left, col_center, col_right = st.columns([1, 2, 1])
+# ✅ Ensure unique atoll names
+unique_atolls = sorted(gdf['Name'].unique().tolist())
 
-    with col_center:
-        st.markdown(f"<h3 style='text-align: center; margin-top: 20px;'>Welcome, {st.session_state['username']}! Select a Tool from the Sidebar Menu on the Left</h3>", unsafe_allow_html=True)
-        st.markdown("---")
-        
-        # Placeholder buttons removed as requested.
+# Editable map title (sidebar)
+map_title = st.sidebar.text_input("Edit Map Title:", "Maximum Rainfall Outlook for OND 2025")
 
-        st.info("Your custom map tools are now available as **'Rainfall Outlook'** and **'Temperature Outlook'** in the Streamlit sidebar menu.")
+# Categories for each atoll
+categories = ['Below Normal', 'Normal', 'Above Normal']
 
-else:
-    # --- LOGIN FORM VIEW ---
-    st.markdown('<div class="main-header">Forecasters\' Tools - Login</div>', unsafe_allow_html=True)
+# Sidebar instructions
+st.sidebar.write("### Adjust Atoll Categories & Percentages")
+st.sidebar.write("Select category and percentage for each atoll:")
 
-    col1, col2, col3 = st.columns([1, 1.5, 1])
+# Dictionaries to store selections
+selected_categories = {}
+selected_percentages = {}
 
-    with col2:
-        st.subheader("Sign In")
-        with st.form("login_form"):
-            username_input = st.text_input("Username")
-            password_input = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign In")
+# Sidebar inputs for each unique atoll
+for i, atoll in enumerate(unique_atolls):
+    selected = st.sidebar.selectbox(f"{atoll} Category", categories, index=1, key=f"{atoll}_cat_{i}")
+    percent = st.sidebar.slider(f"{atoll} %", min_value=0, max_value=100, value=60, step=5, key=f"{atoll}_perc_{i}")
+    
+    selected_categories[atoll] = selected
+    selected_percentages[atoll] = percent
 
-            if submitted:
-                if username_input == USERNAME and password_input == PASSWORD:
-                    st.session_state['authenticated'] = True
-                    st.session_state['username'] = username_input
-                    st.success("Login successful! Redirecting to the main page...")
-                    st.rerun()
-                else:
-                    st.error("Invalid Username or Password. Please try again.")
+# Map category colors
+cmap_below = ListedColormap([
+    '#ffffff', '#ffed5c', '#ffb833', '#ff8f00', '#f15c00', '#e20000'
+])
+cmap_normal = ListedColormap([
+    '#ffffff', '#b2df8a', '#6dc068', '#2d933e', '#006a2e', '#014723'
+])
+cmap_above = ListedColormap([
+    '#ffffff', '#c8c8ff', '#a6b6ff', '#8798f0', '#6c7be0', '#3c4fc2'
+])
 
-    # Stop the execution of the home page until the user is authenticated
-    st.stop()
+# Bins and normalization
+bins = [0, 35, 45, 55, 65, 75, 100]
+norm = BoundaryNorm(bins, ncolors=len(bins)-1, clip=True)
+tick_positions = [35, 45, 55, 65, 75]
+tick_labels = ['35', '45', '55', '65', '75']
+
+# ✅ Map selections back to gdf (so all parts of same atoll share same values)
+gdf['category'] = gdf['Name'].map(selected_categories)
+gdf['prob'] = gdf['Name'].map(selected_percentages)
+
+# Plotting
+fig, ax = plt.subplots(figsize=(12, 10))
+
+# Plot each category with its respective color map
+for cat, cmap in zip(['Below Normal', 'Normal', 'Above Normal'],
+                     [cmap_below, cmap_normal, cmap_above]):
+    subset = gdf[gdf['category'] == cat]
+    if not subset.empty:
+        subset.plot(
+            column='prob', cmap=cmap, norm=norm,
+            edgecolor='black', linewidth=0.5, ax=ax
+        )
+
+# Axis and title
+ax.set_xlim(71, 75)
+ax.set_ylim(-1, 7.5)
+ax.set_title(map_title, fontsize=18)
+ax.set_xlabel("Longitude (°E)", fontsize=14)
+ax.set_ylabel("Latitude (°N)", fontsize=14)
+ax.set_xticks([71, 72, 73, 74, 75])
+ax.set_xticklabels(['71', '72', '73', '74', '75'])
+ax.tick_params(labelsize=12)
+
+# Function for colorbars
+width = "40%"
+height = "2.5%"
+start_x = 0.05
+start_y = 0.1
+spacing = 0.09
+
+def make_cb(ax, cmap, title, offset):
+    cax = inset_axes(ax, width=width, height=height, loc='lower left',
+                     bbox_to_anchor=(start_x, start_y + offset, 1, 1),
+                     bbox_transform=ax.transAxes, borderpad=0)
+    cb = colorbar.ColorbarBase(cax, cmap=cmap, norm=norm, boundaries=bins,
+                               ticks=tick_positions, spacing='uniform', orientation='horizontal')
+    cb.set_ticklabels(tick_labels)
+    cax.set_title(title, fontsize=10, pad=6)
+    cb.ax.tick_params(labelsize=9, pad=2)
+
+# ✅ Rearranged order — Above on top, Normal middle, Below bottom
+make_cb(ax, cmap_above, "Above Normal", 2 * spacing)
+make_cb(ax, cmap_normal, "Normal", spacing)
+make_cb(ax, cmap_below, "Below Normal", 0)
+
+plt.tight_layout()
+
+# Save and display
+buf = BytesIO()
+plt.savefig(buf, format='png')
+buf.seek(0)
+
+st.pyplot(fig)
+
+# Download button
+st.download_button(
+    label="Download Map as PNG",
+    data=buf,
+    file_name='rainfall_outlook_map.png',
+    mime='image/png'
+)
